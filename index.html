@@ -629,6 +629,22 @@ textarea.notes-ta:focus{border-color:var(--b2);}
           <div class="color-row" id="color-picker"><div class="color-swatch selected" style="background:#7c6df0" data-color="#7c6df0" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#00d4aa" data-color="#00d4aa" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#ff4b8b" data-color="#ff4b8b" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#ffb830" data-color="#ffb830" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#60a5fa" data-color="#60a5fa" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#f472b6" data-color="#f472b6" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#34d399" data-color="#34d399" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#fb923c" data-color="#fb923c" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#a78bfa" data-color="#a78bfa" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#e879f9" data-color="#e879f9" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#f87171" data-color="#f87171" onclick="selectColor(this)"></div><div class="color-swatch" style="background:#4ade80" data-color="#4ade80" onclick="selectColor(this)"></div></div>
         </div>
         <div style="margin-top:10px">
+          <div style="font-size:10px;color:var(--a3);font-family:'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Category</div>
+          <select id="h-category" style="width:100%;padding:10px 12px;background:#14152a;border:1px solid rgba(124,109,240,0.15);border-radius:8px;color:#e8e8f5;font-family:'Space Grotesk',sans-serif;font-size:14px;cursor:pointer;transition:border-color .2s" onfocus="this.style.borderColor='rgba(124,109,240,0.5)'" onblur="this.style.borderColor='rgba(124,109,240,0.15)'">
+            <option value="">Other</option>
+            <option value="Health">💪 Health</option>
+            <option value="Productivity">🚀 Productivity</option>
+            <option value="Fitness">🏋️ Fitness</option>
+            <option value="Wellness">🧘 Wellness</option>
+            <option value="Learning">📚 Learning</option>
+            <option value="Diet">🥗 Diet</option>
+            <option value="Money">💰 Money</option>
+            <option value="Social">👥 Social</option>
+            <option value="Career">💼 Career</option>
+            <option value="Hobbies">🎮 Hobbies</option>
+          </select>
+        </div>
+        <div style="margin-top:10px">
           <div style="font-size:10px;color:var(--a3);font-family:'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Repeat on</div>
           <div class="day-picker" id="new-habit-days">
             <div class="dp-day on" data-d="0">Su</div>
@@ -1295,10 +1311,12 @@ function addHabit(){
   const days=[...document.querySelectorAll('#new-habit-days .dp-day.on')].map(el=>+el.dataset.d);
   const colorEl=document.querySelector('#color-picker .color-swatch.selected');
   const color=colorEl?colorEl.dataset.color:'#7c6df0';
-  const h={id:genUUID(),name,emoji,days:days.length===7?null:days,color};
+  const category=document.getElementById('h-category').value || 'Other';
+  const h={id:genUUID(),name,emoji,days:days.length===7?null:days,color,category};
   habits.push(h);
   document.getElementById('h-emoji').value='';
   document.getElementById('h-name').value='';
+  document.getElementById('h-category').value='';
   // Reset day picker to all-on
   document.querySelectorAll('#new-habit-days .dp-day').forEach(el=>el.classList.add('on'));
   $set('day-toggle-label','textContent','Clear');
@@ -2445,7 +2463,7 @@ async function loadUserData(){
     if(lRes.error) console.error('[HabitOS] habit_logs error:', lRes.error);
     if(tRes.error) console.error('[HabitOS] todos error:', tRes.error);
     if(nRes.error) console.error('[HabitOS] habit_notes error:', nRes.error);
-    if(hRes.data){ habits=hRes.data.map(h=>({id:h.id,name:h.name,emoji:h.emoji||'🎯'})); console.log('[HabitOS] Loaded habits:', habits.length); }
+    if(hRes.data){ habits=hRes.data.map(h=>({id:h.id,name:h.name,emoji:h.emoji||'🎯',color:h.color||'#7c6df0',category:h.category||'Other',days:h.days||null})); console.log('[HabitOS] Loaded habits:', habits.length); }
     if(lRes.data){
       logs={};
       lRes.data.forEach(l=>{
@@ -2466,7 +2484,7 @@ async function loadUserData(){
 async function sbAddHabit(h){
   if(!sbClient||!currentUser){ console.warn('[HabitOS] sbAddHabit skipped — not authenticated'); return; }
   console.log('[HabitOS] Saving habit to Supabase:', h);
-  const {data,error}=await sbClient.from('habits').insert({id:h.id,name:h.name,emoji:h.emoji,user_id:currentUser.id});
+  const {data,error}=await sbClient.from('habits').insert({id:h.id,name:h.name,emoji:h.emoji,color:h.color,category:h.category||'Other',days:h.days||null,user_id:currentUser.id});
   if(error) console.error('[HabitOS] sbAddHabit error:', error); else console.log('[HabitOS] Habit saved ✓', data);
 }
 async function sbDeleteHabit(id){
